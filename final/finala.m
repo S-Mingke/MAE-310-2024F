@@ -15,7 +15,12 @@ end
 
 % 材料参数
 E = 200e9; nu = 0.3; T_x = 100;
-C = E / (1 - nu^2) * [1, nu, 0; nu, 1, 0; 0, 0, (1 - nu) / 2];
+plane_stress = true;
+if plane_stress
+    C = E / (1 - nu^2) * [1, nu, 0; nu, 1, 0; 0, 0, (1 - nu) / 2];
+else
+    C = E / ((1 + nu) * (1 - 2*nu)) * [1 - nu, nu, 0; nu, 1 - nu, 0; 0, 0, (1 - 2*nu) / 2];
+end
 
 % 边界条件
 boundary_nodes = find(coordinates(:,1) == 0 | coordinates(:,2) == 0);
@@ -23,10 +28,19 @@ displacement = zeros(size(coordinates, 1), 1);
 displacement(boundary_nodes) = 0;
 
 % 应力边界条件
+R = 0.2;
 traction = zeros(length(boundary_nodes), 3);
 for i = 1:length(boundary_nodes)
     r = sqrt(coordinates(boundary_nodes(i), 1)^2 + coordinates(boundary_nodes(i), 2)^2);
-    traction(i, :) = [T_x, 0, 0]; % 简化为恒定应力
+    theta = atan2(coordinates(boundary_nodes(i), 2), coordinates(boundary_nodes(i), 1));
+    if r ~= 0
+        sigma_rr = T_x/2 * (1 - R^2 / r^2) + T_x/2 * (1 - 4*R^2 / r^2 + 3*R^4 / r^4) * cos(2*theta);
+        sigma_tt = T_x/2 * (1 + R^2 / r^2) - T_x/2 * (1 + 3*R^4 / r^4) * cos(2*theta);
+        sigma_rt = -T_x/2 * (1 + 2*R^2 / r^2 - 3*R^4 / r^4) * sin(2*theta);
+        traction(i, :) = [sigma_rr, sigma_tt, sigma_rt];
+    else
+        traction(i, :) = [0, 0, 0];
+    end
 end
 
 % 假设求解有限元问题
