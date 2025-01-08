@@ -99,3 +99,75 @@ for i = 1:num_refinements
     fprintf('Refinement %d: L2 Error = %.4e\n', i, error_L2);
 end
 
+
+
+% 计算边界节点函数
+function boundary_nodes = findBoundaryNodes(coordinates)
+    % 假设边界节点是位于x=0或y=0的节点
+    boundary_nodes = find(coordinates(:,1) == 0 | coordinates(:,2) == 0);
+end
+
+% 求解有限元问题函数
+function [displacement, stress] = solveFEA(coordinates, elements, C, displacement, traction)
+
+    displacement = rand(size(coordinates, 1), 1);  % 假设一个位移解
+    stress = rand(size(elements, 1), 1);  % 假设一个应力解
+end
+
+% 计算解析应力函数
+function exact_stress = computeExactStress(coordinates, T_x, R)
+    % 计算解析应力
+    r = sqrt(coordinates(:, 1).^2 + coordinates(:, 2).^2);
+    theta = atan2(coordinates(:, 2), coordinates(:, 1));
+    
+    % 处理r = 0的情况，避免除以零
+    sigma_rr = T_x/2 * (1 - R^2 ./ r.^2);
+    sigma_tt = T_x/2 * (1 + R^2 ./ r.^2);
+    sigma_rt = -T_x/2 * (1 + 2*R^2 ./ r.^2);
+    
+    % 在r=0时设置应力为零
+    sigma_rr(r == 0) = 0;
+    sigma_tt(r == 0) = 0;
+    sigma_rt(r == 0) = 0;
+
+    % 计算解析应力
+    exact_stress = [sigma_rr, sigma_tt, sigma_rt];  % 包含所有应力分量
+end
+
+% L2误差计算函数
+function error_L2 = computeL2Error(computed_stress, exact_stress)
+    % 确保两个数组大小一致
+    if length(computed_stress) ~= length(exact_stress)
+        error('Stress arrays must have the same length.');
+    end
+    % 计算L2误差
+    error_L2 = sqrt(sum((computed_stress - exact_stress).^2) / length(computed_stress));
+end
+
+% H1误差计算函数
+function error_H1 = computeH1Error(coordinates, computed_stress, exact_stress)
+    % 计算梯度误差，可以通过数值方法来近似计算梯度
+    grad_exact = computeGradientExactStress(coordinates, exact_stress);  % 计算解析应力梯度
+    error_H1 = sqrt(sum((computed_stress - grad_exact).^2) / length(computed_stress));
+end
+
+% 计算解析应力梯度（占位符）
+function grad_exact = computeGradientExactStress(coordinates, exact_stress)
+    grad_exact = exact_stress;  % 这里只是占位符，实际中应计算梯度
+end
+
+% 网格精细化函数
+function refined_mesh = refineMesh(coordinates, elements)
+    refined_mesh.Coordinates = coordinates * 1.1;  % 假设增加10%的尺度
+    refined_mesh.Elements = elements;  % 假设元素数量不变
+end
+
+% 将元素应力映射到节点
+function node_stress = mapStressToNodes(elements, stress, n_nodes)
+    node_stress = zeros(n_nodes, 1);
+    for i = 1:length(elements)
+        nodes = elements(i, :);  % 获取元素的节点编号
+        % 假设应力值均匀分配给每个节点
+        node_stress(nodes) = node_stress(nodes) + stress(i) / 3;
+    end
+end
