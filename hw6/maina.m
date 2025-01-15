@@ -1,3 +1,4 @@
+
 k = 2; % Regularity of the solution
 l_values = [1, 2]; % Different values for l
 h = linspace(0.1, 1, 10); % Mesh size values
@@ -10,8 +11,6 @@ for l = l_values
     
     error_L2 = h.^beta_L2; % Error in L2-norm
     error_H1 = h.^beta_H1; % Error in H1-norm
-    
-    plot(h, error_H2, 'g'); 
     
     % Display results
     fprintf('For l = %d, the convergence rate in L2-norm is O(h^%f)\n', l, beta_L2);
