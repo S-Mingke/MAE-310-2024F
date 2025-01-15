@@ -10,6 +10,7 @@ mesh_sizes = zeros(length(elements), 1);
 
 min_error = 1e-10; 
 
+% 高阶元素的计算
 for i = 1:length(elements)   
     N = elements(i); 
     h = 1 / N;  
@@ -22,16 +23,41 @@ for i = 1:length(elements)
     A = zeros(N+1, N+1);  
     F = zeros(N+1, 1);    
     
-    % 装配刚度矩阵和载荷向量
-    for j = 1:N
-        % 单元的局部刚度矩阵
-        A_local = [1, -1; -1, 1] / h; 
-        % 单元的局部载荷向量
-        F_local = h / 2 * [u_exact(x(j)); u_exact(x(j+1))];  
-        
-      
-        A(j:j+1, j:j+1) = A(j:j+1, j:j+1) + A_local;
-        F(j:j+1) = F(j:j+1) + F_local;
+    % 选择元素类型：1 - 线性，2 - 二次，3 - 三次
+    element_type = 2;  % 二次元素
+    
+    if element_type == 1  % 线性元素
+        % 装配线性元素的刚度矩阵和载荷向量
+        for j = 1:N
+            % 单元的局部刚度矩阵
+            A_local = [1, -1; -1, 1] / h; 
+            % 单元的局部载荷向量
+            F_local = h / 2 * [u_exact(x(j)); u_exact(x(j+1))];  
+            
+            A(j:j+1, j:j+1) = A(j:j+1, j:j+1) + A_local;
+            F(j:j+1) = F(j:j+1) + F_local;
+        end
+    elseif element_type == 2  % 二次元素
+        % 装配二次元素的刚度矩阵和载荷向量
+        for j = 1:N
+            % 计算局部刚度矩阵和载荷向量（二次元素的积分计算）
+            A_local = (h / 3) * [4, -2; -2, 4];  % 二次元素的局部刚度矩阵
+            F_local = h / 3 * [u_exact(x(j)); u_exact(x(j+1))];  % 二次元素的载荷向量
+            
+            A(j:j+1, j:j+1) = A(j:j+1, j:j+1) + A_local;
+            F(j:j+1) = F(j:j+1) + F_local;
+        end
+    elseif element_type == 3  % 三次元素
+        % 装配三次元素的刚度矩阵和载荷向量（三次元素的积分计算）
+        for j = 1:N
+            % 三次元素的局部刚度矩阵
+            A_local = (h / 4) * [9, -3; -3, 9]; 
+            % 三次元素的载荷向量
+            F_local = h / 4 * [u_exact(x(j)); u_exact(x(j+1))];  
+            
+            A(j:j+1, j:j+1) = A(j:j+1, j:j+1) + A_local;
+            F(j:j+1) = F(j:j+1) + F_local;
+        end
     end
     
     % 施加边界条件
